@@ -1,0 +1,138 @@
+library(nnet)
+library(caret)
+library(stargazer)
+library(pROC)
+
+#MULTINOMIAL
+
+nflcs<-tfg
+nflcs$Fourty_yd<-nflcs$Fourty_yd*100
+nflcs$Shuttle<-nflcs$Shuttle*100
+nflcs$Three_Cone<-nflcs$Three_Cone*100
+nflcs$Round<-as.factor(make.names(nflcs$Round))
+nflcs$Round<-relevel(nflcs$Round,ref ="X1" )
+table(nflcs$Round)/nrow(nflcs)
+str(nflcs)
+
+set.seed(2025)
+trainIndex <- createDataPartition(nflcs$Round, p=0.8, list=FALSE)
+data_train <- nflcs[trainIndex,]
+data_test <- nflcs[-trainIndex,]
+
+modeloInicial<-multinom(Round ~ ., data=data_train,maxit=150)
+summary(modeloInicial)
+stargazer(modeloInicial,type="text")
+Anova(modeloInicial, type = "II")
+
+modelo2<-multinom(Round ~ First_Division+Power_Conference+Fourty_yd+Bench+Broad_Jump+Games+Yards_Receptions+TD+Receptions_Game, data=data_train)
+modelo2$edf
+
+stargazer(modelo2, type="text")
+Anova(modelo2, type = "II")
+exp(coef(modelo2)[,-1])
+
+cm<-confusionMatrix(table(predict(modelo2, newdata=data_train), data_train$Round))
+cm$table
+cm$overall[1:2]
+cm$byClass[,1:2]
+
+cm_test<-confusionMatrix(table(predict(modelo2,newdata=data_test),data_test$Round))
+cm_test$table
+cm_test$overall[1:2]
+cm_test$byClass[,1:2]
+
+aucmulti<-pROC::multiclass.roc(data_test$Round, predict(modelo2, data_test, type='probs'))
+pROC::auc(aucmulti)
+
+input<-data.frame(real=data_test$Round,predict(modelo2, data_test, type='probs'))
+count<-0
+salidaAUC<-c()
+for (class in levels(data_test$Round)){
+  count<-count+1
+  obs <- ifelse(input[, "real"] == class, 1, 0)
+  prob <- input[,class]
+  curvaRoc<-roc(obs, prob, direction="<")
+  salidaAUC<-c(salidaAUC,curvaRoc$auc)
+  if (count==1)
+    plot(curvaRoc)
+  else
+    plot(curvaRoc,add=T,col=count)
+}
+legend("bottomright", legend=paste0(levels(data_test$Round),":",round(salidaAUC,3)),
+       col=1:4, lty=1, cex=0.8)
+mean(salidaAUC)
+
+
+null<-multinom(Round ~ 1,data=data_train,trace=F)
+full<-multinom(Round ~ .,data=data_train,trace=F)
+modeloStepBIC<-step(null,scope=list(lower=null,upper=full),direction="both",
+                    k=log(nrow(data_train)),trace=F)
+modeloStepAIC<-step(null,scope=list(lower=null,upper=full),direction="both",trace=F)
+modeloForwBIC<-step(null,scope=list(lower=null,upper=full),direction="forward",
+                    k=log(nrow(data_train)),trace=F)
+modeloForwAIC<-step(null,scope=list(lower=null,upper=full),direction="forward",trace=F)
+modeloBackBIC<-step(full,scope=list(lower=null,upper=full),direction="backward",
+                    k=log(nrow(data_train)),trace=F)
+modeloBackAIC<-step(full,scope=list(lower=null,upper=full),direction="backward",trace=F)
+
+modelos<-list(modeloStepBIC,modeloStepAIC,modeloForwBIC,modeloForwAIC,modeloBackBIC,
+              modeloBackAIC)
+sapply(modelos,function(x) x$call)
+
+sapply(modelos,function(x) x$edf)
+
+modelos<-list( modeloStepBIC, modeloStepAIC,modeloBackAIC)
+vcrTodosModelos<-list()
+for (i in 1:length(modelos)){
+  set.seed(2025)
+  vcr<-train(formula(modelos[[i]]), data = data_train,
+             method = "multinom",
+             tuneGrid=expand.grid(decay=0), trace=FALSE,
+             trControl = trainControl(method="repeatedcv", number=5, repeats=20,
+                                      summaryFunction=multiClassSummary, classProbs=TRUE)
+  )
+  vcrTodosModelos[[i]]<-vcr
+}
+bwplot(resamples(vcrTodosModelos),metric=c("AUC", "Kappa", "Accuracy"),
+       scales = list(x = list(relation = "free")))
+
+summary(resamples(vcrTodosModelos),metric=c("AUC", "Kappa", "Accuracy"))
+sapply(modelos,function(x)x$edf)
+
+
+
+stargazer(modeloStepAIC,type="text",report=('vc*p'),apply.coef=exp,p.auto=F)
+Anova(modeloStepAIC, type = "II")
+exp(coef(modeloStepAIC)[,-1])
+
+cm<-confusionMatrix(table(predict(modeloStepAIC, newdata=data_train), data_train$Round))
+cm$table
+cm$overall[1:2]
+cm$byClass[,1:2]
+
+cm_test<-confusionMatrix(table(predict(modeloStepAIC,newdata=data_test),data_test$Round))
+cm_test$table
+cm_test$overall[1:2]
+cm_test$byClass[,1:2]
+
+aucmulti<-pROC::multiclass.roc(data_test$Round, predict(modeloStepAIC, data_test, type='probs'))
+pROC::auc(aucmulti)
+
+input<-data.frame(real=data_test$Round,predict(modeloStepAIC, data_test, type='probs'))
+count<-0
+salidaAUC<-c()
+for (class in levels(data_test$Round)){
+  count<-count+1
+  obs <- ifelse(input[, "real"] == class, 1, 0)
+  prob <- input[,class]
+  curvaRoc<-roc(obs, prob, direction="<")
+  salidaAUC<-c(salidaAUC,curvaRoc$auc)
+  if (count==1)
+    plot(curvaRoc)
+  else
+    plot(curvaRoc,add=T,col=count)
+}
+legend("bottomright", legend=paste0(levels(data_test$Round),":",round(salidaAUC,3)),
+       col=1:4, lty=1, cex=0.8)
+
+mean(salidaAUC)
