@@ -93,29 +93,32 @@ The goal is to determine which modeling approach better captures the structure o
 ---
 
 ## Repository Structure
+
 nfl-draft-wr-round-prediction
-
-README.md
-LICENSE
-
-data
-├ raw
-└ processed
-
-R
-├ 01_import.R
-├ 02_EDA.R
-├ 03_preprocessing.R
-└ 04_feature_selection.R
-
-models
-├ Ordinal
-└ multinomial
-
-results
-├ figures
-└ tables
-
-reports
-└ TFG.pdf
-└ thesis_link.md
+│
+├── README.md
+├── LICENSE
+│
+├── data
+│   ├── raw
+│   └── processed
+│
+├── R
+│   ├── 01_import.R
+│   ├── 02_EDA.R
+│   ├── 03_preprocessing.R
+│   └── 04_feature_selection.R
+│
+├── models
+│   ├── Ordinal
+│   └── multinomial
+│
+├── results
+│   ├── figures
+│   └── tables
+│
+└── reports
+    ├── TFG.pdf
+    └── thesis_link.md
+    
+---
