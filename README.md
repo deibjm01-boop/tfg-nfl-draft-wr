@@ -94,6 +94,8 @@ The goal is to determine which modeling approach better captures the structure o
 
 ## Repository Structure
 
+```
+
 nfl-draft-wr-round-prediction
 │
 ├── README.md
@@ -122,3 +124,6 @@ nfl-draft-wr-round-prediction
     └── thesis_link.md
     
 ---
+
+
+```
