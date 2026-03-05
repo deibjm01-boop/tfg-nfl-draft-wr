@@ -106,5 +106,4 @@ results
 ├ figures
 └ tables
 
-reports
-└ TFG.pdf
+TFG.pdf
