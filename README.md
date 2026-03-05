@@ -115,9 +115,6 @@ nfl-draft-wr-round-prediction
 │   ├── Ordinal
 │   └── multinomial
 │
-├── results
-│   ├── figures
-│   └── tables
 │
 └── reports
     ├── TFG.pdf
