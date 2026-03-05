@@ -22,6 +22,16 @@ The analysis focuses on identifying **which player characteristics most influenc
 
 ---
 
+## Full Thesis
+
+The complete Bachelor's Thesis can be accessed through the institutional repository:
+
+https://hdl.handle.net/20.500.14352/118690
+
+This repository contains the code used in the thesis analysis.
+
+---
+
 ## Methodology
 
 ### 1. Data Import
@@ -106,4 +116,6 @@ results
 ├ figures
 └ tables
 
-TFG.pdf
+reports
+└ TFG.pdf
+└ thesis_link.md
